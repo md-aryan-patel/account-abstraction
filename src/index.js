@@ -1,39 +1,23 @@
 const { ethers } = require("hardhat");
-const addresses = require("../artifacts/data/contractdata.json");
+const factoryAbi = require("../artifacts/contracts/samples/SimpleAccountFactory.sol/SimpleAccountFactory.json");
 const { Client, Presets } = require("userop");
 
 require("dotenv").config();
 const privateKey = process.env.admin_key;
 const provider = new ethers.JsonRpcProvider(process.env.sepolia_network);
 const owner = new ethers.Wallet(privateKey, provider);
-const entrypointAddress = addresses.EntryPointAddress;
-const factoryAddress = addresses.FactoryAddress;
-const bundlerRpcUrl = process.env.bundler_rpc;
 
 const main = async () => {
-  console.log("factory address: ", factoryAddress);
-  // This will create a builder instance which knows how to create user operations based on SimpleAccount.sol smart contract.
-  const smartAccount = await Presets.Builder.SimpleAccount.init(
-    owner,
-    bundlerRpcUrl,
-    {
-      entryPoint: entrypointAddress,
-      factory: factoryAddress,
-    }
+  const factoryContract = await ethers.getContractAt(
+    factoryAbi.abi,
+    process.env.factory_address,
+    owner
   );
-
-  console.log("Sender address: ", smartAccount.getSender());
-
-  const client = await Client.init(bundlerRpcUrl, {
-    entryPoint: entrypointAddress,
-  });
-
-  const result = await client.sendUserOperation(
-    smartAccount.execute(smartAccount.getSender(), 0, "0x")
+  const res = await factoryContract.createAccount(
+    process.env.admin_address,
+    2999
   );
-
-  const event = await result.wait();
-  console.log(`Transaction hash: ${event?.transactionHash}`);
+  console.log(res);
 };
 
 main().catch((error) => {

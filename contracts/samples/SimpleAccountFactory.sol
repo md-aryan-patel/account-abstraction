@@ -19,6 +19,8 @@ contract SimpleAccountFactory {
         accountImplementation = new SimpleAccount(_entryPoint);
     }
 
+    event CreateAccount(address userAddress);
+
     /**
      * create an account, and return its address.
      * returns the address even if the account is already deployed.
@@ -42,6 +44,7 @@ contract SimpleAccountFactory {
                 )
             )
         );
+        emit CreateAccount(address(ret));
     }
 
     /**

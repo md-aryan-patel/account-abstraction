@@ -23,8 +23,13 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * Account-Abstraction (EIP-4337) singleton EntryPoint implementation.
  * Only one instance required on each chain.
  */
-contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard, OpenZeppelin.ERC165 {
-
+contract EntryPoint is
+    IEntryPoint,
+    StakeManager,
+    NonceManager,
+    ReentrancyGuard,
+    OpenZeppelin.ERC165
+{
     using UserOperationLib for UserOperation;
 
     SenderCreator private senderCreator = new SenderCreator();
@@ -42,9 +47,15 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
     uint256 public constant SIG_VALIDATION_FAILED = 1;
 
     /// @inheritdoc OpenZeppelin.IERC165
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
         // note: solidity "type(IEntryPoint).interfaceId" is without inherited methods but we want to check everything
-        return interfaceId == (type(IEntryPoint).interfaceId ^ type(IStakeManager).interfaceId ^ type(INonceManager).interfaceId) ||
+        return
+            interfaceId ==
+            (type(IEntryPoint).interfaceId ^
+                type(IStakeManager).interfaceId ^
+                type(INonceManager).interfaceId) ||
             interfaceId == type(IEntryPoint).interfaceId ||
             interfaceId == type(IStakeManager).interfaceId ||
             interfaceId == type(INonceManager).interfaceId ||
@@ -73,10 +84,7 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
         uint256 opIndex,
         UserOperation calldata userOp,
         UserOpInfo memory opInfo
-    )
-    internal
-    returns
-    (uint256 collected) {
+    ) internal returns (uint256 collected) {
         uint256 preGas = gasleft();
         bytes memory context = getMemoryBytesFromOffset(opInfo.contextOffset);
 
@@ -88,7 +96,7 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
             bytes32 innerRevertCode;
             assembly {
                 let len := returndatasize()
-                if eq(32,len) {
+                if eq(32, len) {
                     returndatacopy(0, 0, 32)
                     innerRevertCode := mload(0)
                 }
@@ -157,7 +165,6 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
         UserOpsPerAggregator[] calldata opsPerAggregator,
         address payable beneficiary
     ) public nonReentrant {
-
         uint256 opasLen = opsPerAggregator.length;
         uint256 totalOps = 0;
         for (uint256 i = 0; i < opasLen; i++) {
@@ -439,7 +446,11 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
             returns (uint256 _validationData) {
                 validationData = _validationData;
             } catch {
-                revert FailedOpWithRevert(opIndex, "AA23 reverted", Exec.getReturnData(REVERT_REASON_MAX_LEN));
+                revert FailedOpWithRevert(
+                    opIndex,
+                    "AA23 reverted",
+                    Exec.getReturnData(REVERT_REASON_MAX_LEN)
+                );
             }
             if (paymaster == address(0)) {
                 DepositInfo storage senderInfo = deposits[sender];
@@ -499,7 +510,11 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
                 context = _context;
                 validationData = _validationData;
             } catch {
-                revert FailedOpWithRevert(opIndex, "AA33 reverted", Exec.getReturnData(REVERT_REASON_MAX_LEN));
+                revert FailedOpWithRevert(
+                    opIndex,
+                    "AA33 reverted",
+                    Exec.getReturnData(REVERT_REASON_MAX_LEN)
+                );
             }
         }
     }
@@ -552,7 +567,9 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
         }
         ValidationData memory data = _parseValidationData(validationData);
         // solhint-disable-next-line not-rely-on-time
-        outOfTimeRange = block.timestamp > data.validUntil || block.timestamp < data.validAfter;
+        outOfTimeRange =
+            block.timestamp > data.validUntil ||
+            block.timestamp < data.validAfter;
         aggregator = data.aggregator;
     }
 
@@ -654,12 +671,17 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
                 if (context.length > 0) {
                     actualGasCost = actualGas * gasPrice;
                     if (mode != IPaymaster.PostOpMode.postOpReverted) {
-                        try IPaymaster(paymaster).postOp{
-                            gas: mUserOp.verificationGasLimit
-                        }(mode, context, actualGasCost)
+                        try
+                            IPaymaster(paymaster).postOp{
+                                gas: mUserOp.verificationGasLimit
+                            }(mode, context, actualGasCost)
                         // solhint-disable-next-line no-empty-blocks
-                        {} catch {
-                            bytes memory reason = Exec.getReturnData(REVERT_REASON_MAX_LEN);
+                        {
+
+                        } catch {
+                            bytes memory reason = Exec.getReturnData(
+                                REVERT_REASON_MAX_LEN
+                            );
                             revert PostOpReverted(reason);
                         }
                     }
@@ -671,14 +693,15 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard,
             {
                 uint256 executionGasLimit = mUserOp.callGasLimit;
                 // Note that 'verificationGasLimit' here is the limit given to the 'postOp' which is part of execution
-                if (context.length > 0){
+                if (context.length > 0) {
                     executionGasLimit += mUserOp.verificationGasLimit;
                 }
                 uint256 executionGasUsed = actualGas - opInfo.preOpGas;
                 // this check is required for the gas used within EntryPoint and not covered by explicit gas limits
                 if (executionGasLimit > executionGasUsed) {
                     uint256 unusedGas = executionGasLimit - executionGasUsed;
-                    uint256 unusedGasPenalty = (unusedGas * PENALTY_PERCENT) / 100;
+                    uint256 unusedGasPenalty = (unusedGas * PENALTY_PERCENT) /
+                        100;
                     actualGas += unusedGasPenalty;
                 }
             }
