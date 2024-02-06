@@ -2,32 +2,23 @@ const hre = require("hardhat");
 require("dotenv").config();
 
 async function main() {
+  const entryPoint = await hre.ethers.deployContract("EntryPoint");
+  await entryPoint.waitForDeployment();
+
   const AccountFactory = await hre.ethers.deployContract(
     "SimpleAccountFactory",
-    [process.env.entrypoint_address]
+    [entryPoint.target]
   );
-
   await AccountFactory.waitForDeployment();
-  const token = await deploySamleTokenForTest();
 
   const data = {
     FactoryAddress: AccountFactory.target,
-    EntryPointAddress: process.env.entrypoint_address,
-    TokenAddress: token.target,
+    EntryPointAddress: entryPoint.target,
   };
 
   await writeFileData(JSON.stringify(data));
   console.log(`factory deployed at: ${AccountFactory.target}`);
 }
-
-const deploySamleTokenForTest = async () => {
-  const token = await hre.ethers.deployContract("AccountAbstractionToken", [
-    process.env.admin_address,
-  ]);
-  await token.waitForDeployment();
-
-  return token;
-};
 
 const writeFileData = async (data) => {
   const fs = require("fs");

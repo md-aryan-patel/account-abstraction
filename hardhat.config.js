@@ -3,6 +3,7 @@ require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
+  defaultNetwork: "sepolia",
   solidity: {
     version: "0.8.20",
     settings: {
@@ -13,8 +14,10 @@ module.exports = {
       viaIR: true,
     },
   },
-  sepolia: {
-    url: process.env.sepolia_network,
-    accounts: [process.env.admin_key],
+  networks: {
+    sepolia: {
+      url: process.env.sepolia_network,
+      accounts: [process.env.admin_key],
+    },
   },
 };
